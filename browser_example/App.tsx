@@ -12,46 +12,19 @@ import {
   Text,
   StyleSheet,
   View,
+  SafeAreaView
 } from 'react-native';
 
 
-import branch, { BranchEvent } from 'react-native-branch';
+import branch, { BranchEvent, BranchParams } from 'react-native-branch';
 
 import WebView from 'react-native-webview';
-
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'column',
-    marginTop: 64,
-  },
-  textInput: {
-    flex: 0.08,
-  },
-  webView: {
-    flex: 0.77,
-  },
-  button: {
-    backgroundColor: '#cceeee',
-    borderColor: '#2266aa',
-    borderTopWidth: 1,
-    flex: 0.15,
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: '#2266aa',
-    fontSize: 23,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-});
-
 interface MyState {
   text: string
   url: string
   title: string
   image: string
+  params: BranchParams | undefined
 }
 
 class App extends React.Component<any, MyState> {
@@ -61,10 +34,11 @@ class App extends React.Component<any, MyState> {
   constructor(props: any) {
     super(props);
     this.state = {
-      text: 'https://branch.io',
-      url: 'https://branch.io',
+      text: 'https://example.com',
+      url: 'https://example.com',
       title: "Branch",
-      image: ""
+      image: "",
+      params: undefined
     };
   }
 
@@ -83,7 +57,7 @@ class App extends React.Component<any, MyState> {
       if (params) {
         if (!params['+clicked_branch_link']) {
           if (!!params['+non_branch_link']) {
-            this.setState({ url: params['+non_branch_link'] as string, title: JSON.stringify(params['+non_branch_link']) });
+            this.setState({ url: params['+non_branch_link'] as string, title: params['+non_branch_link'] as string });
           }
           return;
         }
@@ -94,7 +68,7 @@ class App extends React.Component<any, MyState> {
         let image = params.$og_image_url;
 
         // Now reload the webview
-        this.setState({ url: url, title: JSON.stringify(title), image: JSON.stringify(image) });
+        this.setState({ text: url, url: url, title: JSON.stringify(title), image: JSON.stringify(image), params: params });
       }
     });
 
@@ -103,7 +77,7 @@ class App extends React.Component<any, MyState> {
 
   componentWillUnmount() {
     if (this._unsubscribeFromBranch) {
-      console.log("unsubscribe")
+      console.log("unsubscribe");
       this._unsubscribeFromBranch();
       this._unsubscribeFromBranch = null;
     }
@@ -114,35 +88,51 @@ class App extends React.Component<any, MyState> {
     }
   }
 
-
   render() {
     return (
-      <View
-        style={styles.container} >
-        <TextInput
-          style={styles.textInput}
-          onChangeText={(text) => this.setState({ text: text })}
-          onEndEditing={this.editingEnded.bind(this)}
-          placeholder={'Enter Branch or non-Branch URL'}
-          autoCapitalize={'none'}
-          autoCorrect={false}
-          value={this.state.text}
-        />
-        <WebView
-          style={styles.webView}
-          source={{ uri: this.state.url }}
-          onLoad={this.registerView.bind(this)}
-          onNavigationStateChange={this._onNavigationStateChange.bind(this)}
-        />
-        <TouchableHighlight
-          onPress={this.onShare.bind(this)}
-          style={styles.button} >
-          <Text
-            style={styles.buttonText}>
-            Share
+      <SafeAreaView style={styles.container}>
+        <View
+          style={styles.container} >
+          <View style={{ elevation: 3 }}>
+            <Text
+              style={styles.titleText}>
+              Referring URL
+            </Text>
+            <Text
+            numberOfLines={2}
+            ellipsizeMode='tail' 
+            style={{marginVertical: 10, fontSize: 20}}>
+              {this.state.params?.['~referring_link'] ?? this.state.url}
+            </Text>
+          </View>
+          <Text style={styles.titleText}>
+            Navigate to URL
           </Text>
-        </TouchableHighlight>
-      </View>
+          <TextInput
+            style={styles.input}
+            onChangeText={(text) => this.setState({ text: text })}
+            onEndEditing={this.editingEnded.bind(this)}
+            placeholder={'Enter Branch or non-Branch URL'}
+            autoCapitalize={'none'}
+            autoCorrect={false}
+            value={this.state.text}
+          />
+          <WebView
+            style={styles.webView}
+            source={{ uri: this.state.url }}
+            onLoad={this.registerView.bind(this)}
+            onNavigationStateChange={this._onNavigationStateChange.bind(this)}
+          />
+          <TouchableHighlight
+            onPress={this.onShare.bind(this)}
+            style={styles.button} >
+            <Text
+              style={styles.buttonText}>
+              Share
+            </Text>
+          </TouchableHighlight>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -152,8 +142,8 @@ class App extends React.Component<any, MyState> {
   }
 
   _onNavigationStateChange(webViewState: any) {
-    console.log("navigated to url " + webViewState.url)
-    this.setState({ url: webViewState.url })
+    console.log("navigated to url " + webViewState.url + " title " + webViewState.title)
+    this.setState({ url: webViewState.url, title: webViewState.title })
   }
 
 
@@ -170,20 +160,10 @@ class App extends React.Component<any, MyState> {
       "item/12345",
       {
         canonicalUrl: `${this.state.url}`,
-        title: "My Item Title",
-        contentMetadata: {
-          quantity: 1,
-          price: 23.20,
-          sku: "1994320302",
-          productName: "my_product_name1",
-          productBrand: "my_prod_Brand1",
-          customMetadata: {
-            custom_key1: "custom_value1",
-            custom_key2: "custom_value2"
-          }
-        }
+        title: this.state.title
       }
     )
+
 
     let params = {
       transaction_id: "tras_Id_1232343434",
@@ -201,6 +181,7 @@ class App extends React.Component<any, MyState> {
         "Custom_Event_Property_Key2": "Custom_Event_Property_val2"
       }
     }
+
     let event = new BranchEvent(BranchEvent.ViewItem, [this.buo], params)
     event.logEvent()
 
@@ -210,13 +191,13 @@ class App extends React.Component<any, MyState> {
   async onShare() {
 
     let shareOptions = {
-      messageHeader: 'Check this out',
-      messageBody: 'No really, check this out!'
+      messageHeader: this.state.title,
+      messageBody: this.state.title
     }
 
     let linkProperties = {
-      feature: 'sharing',
-      channel: 'facebook'
+      feature: 'share',
+      channel: 'RNApp'
     }
 
     let controlParams = {
@@ -225,18 +206,6 @@ class App extends React.Component<any, MyState> {
     }
 
     let { channel, completed, error } = await this.buo.showShareSheet(shareOptions, linkProperties, controlParams)
-
-
-    // let { channel, completed, error } = await this.buo.showShareSheet({
-    //   emailSubject: this.state.title,
-    //   messageHeader: this.state.title,
-    // }, {
-    //   feature: "share",
-    //   channel: "RNApp",
-    // }, {
-    //   $desktop_url: this.state.url,
-    //   $ios_deepview: "branch_default",
-    // });
 
     if (error) {
       console.error("Error sharing via Branch: " + error);
@@ -248,3 +217,45 @@ class App extends React.Component<any, MyState> {
 }
 
 export default App;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: 'column',
+    marginTop: 48,
+    marginHorizontal: 16
+  },
+  titleText: {
+    color: "#000000",
+    fontSize: 25,
+    fontWeight: 'bold',
+    marginVertical: 10
+  },
+  webView: {
+    flex: .9,
+    borderColor: '#2266aa',
+    borderRadius: 10,
+  },
+  button: {
+    backgroundColor: '#cceeee',
+    borderColor: '#2266aa',
+    flex: 0.15,
+    justifyContent: 'center',
+    borderRadius: 10,
+    marginBottom: 10
+  },
+  buttonText: {
+    color: '#2266aa',
+    fontSize: 23,
+    textAlign: 'center',
+  },
+  input: {
+    height: 50,
+    marginVertical: 10,
+    borderWidth: 1,
+    padding: 10,
+    borderColor: "gray",
+    width: "100%",
+    borderRadius: 10,
+  },
+});
