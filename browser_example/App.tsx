@@ -224,7 +224,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
-    marginTop: 48,
+    marginTop: 10,
+    marginBottom: 10,
     marginHorizontal: 16,
   },
   text: {
@@ -248,7 +249,6 @@ const styles = StyleSheet.create({
     flex: 0.15,
     justifyContent: 'center',
     borderRadius: 10,
-    marginBottom: 10,
   },
   buttonText: {
     color: '#2266aa',
