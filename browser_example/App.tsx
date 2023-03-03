@@ -45,56 +45,79 @@ class App extends React.Component<any, MyState> {
   componentDidMount() {
     console.log('componentDidMount');
 
-    this._unsubscribeFromBranch = branch.subscribe(({error, params, uri}) => {
-      if (error) {
-        console.error('Error from Branch: ' + error);
-        return;
-      }
-
-      console.log(
-        `Branch params for ${JSON.stringify(uri)}: ${JSON.stringify(params)}`,
-      );
-
-      if (params) {
-        if (!params['+clicked_branch_link']) {
-          if (params['+non_branch_link']) {
-            this.setState({
-              url: params['+non_branch_link'] as string,
-              title: params['+non_branch_link'] as string,
-            });
-          }
+    this._unsubscribeFromBranch = branch.subscribe({
+      onOpenStart: ({uri, cachedInitialEvent}) => {
+        // cachedInitialEvent is true if the event was received by the
+        // native layer before JS loaded.
+        console.log(
+          'Branch subscribe onOpenStart, will open ' +
+            uri +
+            ' cachedInitialEvent is ' +
+            cachedInitialEvent,
+        );
+      },
+      onOpenComplete: ({error, params, uri}) => {
+        if (error) {
+          console.error(
+            'Branch subscribe onOpenComplete, Error from opening uri: ' +
+              uri +
+              ' error: ' +
+              error,
+          );
           return;
         }
 
-        // Get title and url for route
-        let title = params.$og_title;
-        let url = params.$canonical_url as string;
-        let image = params.$og_image_url;
+        if (params) {
+          if (!params['+clicked_branch_link']) {
+            if (params['+non_branch_link']) {
+              this.setState({
+                url: params['+non_branch_link'] as string,
+                title: params['+non_branch_link'] as string,
+              });
+            }
+            return;
+          }
 
-        // Now reload the webview
-        this.setState({
-          text: url,
-          url: url,
-          title: JSON.stringify(title),
-          image: JSON.stringify(image),
-          params: params,
-        });
-      }
+          console.log('Branch opened ' + uri);
+          // handle params
+          let title = params.$og_title;
+          let url = params.$canonical_url as string;
+          let image = params.$og_image_url;
+
+          // Now reload the webview
+          this.setState({
+            text: url,
+            url: url,
+            title: JSON.stringify(title),
+            image: JSON.stringify(image),
+            params: params,
+          });
+        }
+
+        this.registerView();
+
+        // let first = branch.getFirstReferringParams();
+        // let latest = branch.getLatestReferringParams();
+
+        // console.log('branch first params ' + JSON.stringify(first));
+        // console.log('branch latest params ' + JSON.stringify(latest));
+      },
     });
-
-    this.registerView();
   }
 
   componentWillUnmount() {
     console.log('componentWillUnmount');
+    console.log(
+      'branch this._unsubscribeFromBranch ' + this._unsubscribeFromBranch,
+    );
     if (this._unsubscribeFromBranch) {
-      console.log('unsubscribe');
+      console.log('branch unsubscribe');
       this._unsubscribeFromBranch();
       this._unsubscribeFromBranch = null;
     }
 
     if (this.buo) {
-      console.log('buo release');
+      console.log('branch buo release');
       this.buo.release();
       this.buo = null;
     }
@@ -145,7 +168,7 @@ class App extends React.Component<any, MyState> {
     console.log(
       'navigated to url ' + webViewState.url + ' title ' + webViewState.title,
     );
-    this.setState({url: webViewState.url, title: webViewState.title});
+    //this.setState({url: webViewState.url, title: webViewState.title});
   }
 
   async registerView() {
