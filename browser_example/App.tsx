@@ -93,31 +93,20 @@ class App extends React.Component<any, MyState> {
             params: params,
           });
         }
-
-        this.registerView();
-
-        // let first = branch.getFirstReferringParams();
-        // let latest = branch.getLatestReferringParams();
-
-        // console.log('branch first params ' + JSON.stringify(first));
-        // console.log('branch latest params ' + JSON.stringify(latest));
       },
     });
   }
 
   componentWillUnmount() {
     console.log('componentWillUnmount');
-    console.log(
-      'branch this._unsubscribeFromBranch ' + this._unsubscribeFromBranch,
-    );
     if (this._unsubscribeFromBranch) {
-      console.log('branch unsubscribe');
+      console.log('Branch unsubscribe');
       this._unsubscribeFromBranch();
       this._unsubscribeFromBranch = null;
     }
 
     if (this.buo) {
-      console.log('branch buo release');
+      console.log('Branch buo release');
       this.buo.release();
       this.buo = null;
     }
@@ -160,7 +149,6 @@ class App extends React.Component<any, MyState> {
   }
 
   editingEnded() {
-    console.log('text is ' + this.state.text);
     branch.openURL(this.state.text);
   }
 
@@ -168,7 +156,7 @@ class App extends React.Component<any, MyState> {
     console.log(
       'navigated to url ' + webViewState.url + ' title ' + webViewState.title,
     );
-    //this.setState({url: webViewState.url, title: webViewState.title});
+    this.setState({url: webViewState.url, title: webViewState.title});
   }
 
   async registerView() {
